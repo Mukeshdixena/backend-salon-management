@@ -7,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update     # creates/updates tables automatically during dev
+      ddl-auto: update          # Auto creates/updates tables
     show-sql: true
     properties:
       hibernate:
@@ -15,7 +15,7 @@ spring:
 
   sql:
     init:
-      mode: always       # runs schema.sql / data.sql if present
+      mode: always              # Runs schema.sql/data.sql if exist
 
 server:
   port: 8080
@@ -24,3 +24,4 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
+    com.salon.backend_salon_managemen: DEBUG
