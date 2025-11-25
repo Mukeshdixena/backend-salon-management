@@ -1,0 +1,75 @@
+package com.salon.backend_salon_management.controller;
+
+import com.salon.backend_salon_management.entity.Booking;
+import com.salon.backend_salon_management.entity.Booking.BookingStatus;
+import com.salon.backend_salon_management.repository.BookingRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/provider/bookings")
+@RequiredArgsConstructor
+// @CrossOrigin(origins = "http://localhost:5173")
+public class ProviderBookingController {
+
+    private final BookingRepository bookingRepository;
+
+    private Long getSalonId() {
+        // TODO: Extract from JWT
+        return 1L;
+    }
+
+    // TODAY QUEUE
+    @GetMapping("/today")
+    public ResponseEntity<List<Booking>> todayQueue() {
+        Long salonId = getSalonId();
+        List<Booking> queue = bookingRepository.findBySalonIdAndDateOrderByTimeAsc(salonId, LocalDate.now());
+        return ResponseEntity.ok(queue);
+    }
+
+    // ACCEPT BOOKING
+    @PostMapping("/{id}/accept")
+    public ResponseEntity<?> accept(@PathVariable Long id) {
+        return updateStatus(id, BookingStatus.CONFIRMED);
+    }
+
+    // REJECT BOOKING
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<?> reject(@PathVariable Long id) {
+        return updateStatus(id, BookingStatus.CANCELLED);
+    }
+
+    // START SERVICE
+    @PostMapping("/{id}/start")
+    public ResponseEntity<?> start(@PathVariable Long id) {
+        return updateStatus(id, BookingStatus.IN_PROGRESS);
+    }
+
+    // COMPLETE SERVICE
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<?> complete(@PathVariable Long id) {
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) return ResponseEntity.notFound().build();
+
+        booking.setStatus(BookingStatus.COMPLETED);
+        booking.setCompletedAt(java.time.LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        return ResponseEntity.ok().build();
+    }
+
+    // Common status update method
+    private ResponseEntity<?> updateStatus(Long id, BookingStatus status) {
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) return ResponseEntity.notFound().build();
+
+        booking.setStatus(status);
+        bookingRepository.save(booking);
+
+        return ResponseEntity.ok().build();
+    }
+}
