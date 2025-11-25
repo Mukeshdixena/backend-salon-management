@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/provider/services")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+// @CrossOrigin(origins = "http://localhost:5173")
 public class ProviderServicesController {
 
     private final ProviderServiceService providerServiceService;

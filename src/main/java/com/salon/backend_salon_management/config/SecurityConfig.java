@@ -38,6 +38,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CustomUserDetailsService userDetailsService;
 
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/api/auth/admin/login",
+            "/api/auth/customer/login",
+            "/api/auth/customer/register",
+            "/api/auth/provider/login",
+            "/api/auth/provider/register",
+            "/api/salons/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -45,36 +54,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/admin/login",
-                                "/api/auth/customer/login",
-                                "/api/auth/customer/register",
-                                "/api/auth/provider/login",
-                                "/api/auth/provider/register",
-                                "/api/salons/**")
-                        .permitAll()
-
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/provider/**").hasRole("PROVIDER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
                         .anyRequest().authenticated())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
 
-                // ==================================================
-                // SKIP JWT FILTER FOR PUBLIC ENDPOINTS
-                // ==================================================
                 .addFilterBefore((req, res, chain) -> {
 
                     HttpServletRequest request = (HttpServletRequest) req;
                     String path = request.getServletPath();
 
-                    if (path.startsWith("/api/salons") ||
-                            path.startsWith("/api/auth")) {
-
-                        chain.doFilter(req, res);
-                        return;
+                    // Skip JWT filter for public endpoints only
+                    for (String publicPath : PUBLIC_ENDPOINTS) {
+                        if (path.startsWith(publicPath.replace("/**", ""))) {
+                            chain.doFilter(req, res);
+                            return;
+                        }
                     }
 
                     jwtAuthFilter.doFilter(req, res, chain);
@@ -84,17 +82,22 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // ==================================================
+    // ONLY CORS OPENED — SECURITY LOGIC UNCHANGED
+    // ==================================================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("*"); // allow all origins
+        config.addAllowedHeader("*"); // allow all request headers
+        config.addAllowedMethod("*"); // allow all HTTP methods
+        config.setAllowCredentials(true); // allow cookies / authorization
+        config.addExposedHeader("Authorization");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 

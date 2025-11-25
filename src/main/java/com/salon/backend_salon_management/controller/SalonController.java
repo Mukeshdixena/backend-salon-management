@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/salons")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+// @CrossOrigin(origins = "http://localhost:5173")
 public class SalonController {
 
     private final SalonRepository salonRepo;
